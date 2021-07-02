@@ -1,0 +1,84 @@
+{
+    "version": 2,
+    "timeout": "3000ms",
+    "cache_ttl": "300s",
+    "host": [ "http://fake_api:8080" ],
+    "extra_config": {
+      "github_com/devopsfaith/krakend-metrics": {
+        "collection_time": "30s",
+        "listen_address":":8090"
+      },
+      "github_com/letgoapp/krakend-influx":{
+        "address":"http://influxdb:8086",
+        "ttl":"25s"
+      },
+      "github_com/devopsfaith/krakend-gologging": {
+        "level":  "DEBUG",
+        "prefix": "[KRAKEND]",
+        "syslog": false,
+        "stdout": true
+      },
+      "github_com/devopsfaith/krakend-opencensus": {
+        "sample_rate": 100,
+        "reporting_period": 1,
+        "exporters": {
+          "jaeger": {
+            "endpoint": "http://jaeger:14268/api/traces",
+            "service_name":"krakend"
+          }
+        }
+      },
+      "github_com/devopsfaith/krakend-cors": {
+        "allow_origins": [ "http://localhost:8080", "http://localhost:5000", "http://192.168.99.100:3000", "http://0.0.0.0:5000" ],
+        "allow_methods": [ "POST", "GET" ],
+        "allow_headers": ["Origin","Authorization","Content-Type"],
+        "expose_headers": ["Content-Length"],
+        "max_age": "12h"
+      },
+      "github_com/devopsfaith/bloomfilter": {
+        "N": 10000000,
+        "P": 0.0000001,
+        "HashName": "optimal",
+        "TTL": 1500,
+        "port": 1234,
+        "TokenKeys": ["jti"]
+      }
+    },
+    "endpoints": [ 
+      {
+        "endpoint": "/users",
+        "backend": [
+          {
+            "url_pattern": "/user/1.json"
+          }
+        ],
+        "extra_config": {
+          "github.com/devopsfaith/krakend-jose/validator": {
+            "alg": "HS256",
+            "audience": ["http://api.example.com"],
+            "roles_key": "roles",
+            "issuer": "https://krakend.io",
+            "roles": ["role_a", "role_c"],
+            "jwk-url": "http://fake_api:8080/jwk/symmetric.json",
+            "disable_jwk_security": true
+          }
+        }
+      },
+      {
+        "endpoint": "/test-service-endpoint",
+        "method": "GET",
+        "output_encoding": "json",
+        "backend": [
+          {
+            "url_pattern": "/api/v1/users",
+            "encoding": "json",
+            "method": "GET",
+            "host": [
+              "http://localhost:5000"
+            ],
+            "disable_host_sanitize": false
+          }
+        ]
+      }
+    ]
+  }
